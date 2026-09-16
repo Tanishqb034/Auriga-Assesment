@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AV Room Equipment Rental</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>AV Room Equipment Rental</h1>
+        <p>Equipment booking and rental management system</p>
+    </header>
+
+
+    <main>
+
+        <!-- Equipment Section -->
+        <section>
+            <h2>Equipment Inventory</h2>
+
+            <div id="equipment-list" class="equipment-grid">
+                <!-- Equipment cards will be loaded here -->
+            </div>
+        </section>
+
+
+        <!-- Availability Section -->
+        <section>
+            <h2>Check Availability</h2>
+
+            <div class="form-grid">
+
+                <div>
+                    <label>Equipment</label>
+                    <select id="availability-equipment"></select>
+                </div>
+
+                <div>
+                    <label>Borrow Date</label>
+                    <input type="date" id="availability-borrow-date">
+                </div>
+
+                <div>
+                    <label>Due Date</label>
+                    <input type="date" id="availability-due-date">
+                </div>
+
+            </div>
+
+            <button onclick="checkAvailability()">
+                Check Availability
+            </button>
+
+            <div id="availability-result"></div>
+        </section>
+
+
+        <!-- Borrower Section -->
+        <section>
+            <h2>Add Borrower</h2>
+
+            <div class="form-grid">
+
+                <div>
+                    <label>Name</label>
+                    <input type="text" id="borrower-name" placeholder="Enter name">
+                </div>
+
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="borrower-email" placeholder="Enter email">
+                </div>
+
+            </div>
+
+            <button onclick="addBorrower()">
+                Add Borrower
+            </button>
+
+            <div id="borrower-result"></div>
+        </section>
+
+
+        <!-- Booking Section -->
+        <section>
+            <h2>Book Equipment</h2>
+
+            <div class="form-grid">
+
+                <div>
+                    <label>Borrower ID</label>
+                    <input type="number" id="booking-borrower">
+                </div>
+
+                <div>
+                    <label>Equipment</label>
+                    <select id="booking-equipment"></select>
+                </div>
+
+                <div>
+                    <label>Quantity</label>
+                    <input type="number" id="booking-quantity" min="1">
+                </div>
+
+                <div>
+                    <label>Borrow Date</label>
+                    <input type="date" id="booking-borrow-date">
+                </div>
+
+                <div>
+                    <label>Due Date</label>
+                    <input type="date" id="booking-due-date">
+                </div>
+
+                <div>
+                    <label>Deposit (₹)</label>
+                    <input type="number" id="booking-deposit" min="0">
+                </div>
+
+            </div>
+
+            <button onclick="createBooking()">
+                Book Equipment
+            </button>
+
+            <div id="booking-result"></div>
+        </section>
+
+
+        <!-- Rentals Section -->
+        <section>
+            <h2>All Rentals</h2>
+
+            <button onclick="loadRentals()">
+                Refresh Rentals
+            </button>
+
+            <div id="rentals-list">
+                <!-- Rental records will appear here -->
+            </div>
+        </section>
+
+    </main>
+
+
+    <footer>
+        <p>AV Room Equipment Rental System</p>
+    </footer>
+
+
+    <script src="/static/script.js"></script>
+
+</body>
+</html>
