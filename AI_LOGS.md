@@ -1,155 +1,584 @@
-Haan, ye Auriga assessment ka AV Room Equipment Lending System lag raha hai. Iska main goal ek backend/API banana hai jisme borrowing, availability, returns, aur twist ke रूप में active loan transfer properly handle ho.
+Perfect! 🔥 Transfer test bhi completely pass ho gaya.
 
-Tumhare prompt ko simple language mein todte hain:
+Current state:
 
-Core requirements
-Equipment
-DSLR
-Projector
-Mic
-Tripod
-Ek item ke multiple units ho sakte hain.
-Example: Projector ke 3 units.
-Borrower
-Student/club/person jo equipment borrow karega.
-Borrowing / Loan
-Borrower equipment lega.
-borrowed_at
-due_date
-Return hone tak loan active rahega.
+DSLR total units     = 3
+Rental 1             = RETURNED (1 unit)
+Rental 2             = ACTIVE (2 units, transferred to Rahul)
+Booked               = 2
+Available            = 1
 
-Availability
-Agar 3 projectors hain aur:
+Aur sabse important Twist requirement bhi satisfy ho gayi:
 
-2 borrowed hain
-1 available hai
+Transfer ke baad availability unchanged rahi. ✅
 
-toh system ko clearly batana chahiye:
+Ab backend ke core features complete hain
+Feature	Status
+Equipment inventory	✅
+Multiple units	✅
+Date-range availability	✅
+Booking	✅
+Overlapping booking prevention	✅
+Borrower limit	✅
+Return	✅
+Late fee calculation	✅
+Deposit refund	✅
+Active loan transfer	✅
+Transfer keeps due date	✅
+Transfer doesn't alter equipment availability	✅
 
-Projector
-Total: 3
-Borrowed: 2
-Available: 1
+Ab next major kaam frontend hai.
 
-Return
-Return karte waqt:
+2.5-hour Builder round ke perspective se ab hume simple but professional UI banana chahiye—equipment list, availability search, booking form, rentals table, return aur transfer actions.
 
-actual return date
-late days
-late fee
-deposit refund
+Agar tum ready ho, next hum static/index.html se frontend start karte hain, aur main tumhe ek-ek step mein code dunga.
 
-calculate hoga.
+ok
 
-Deposit
-Example:
+Great 👍 Ab frontend start karte hain.
 
-Deposit = ₹500
-Late fee = ₹100
+Step 1: static/index.html kholo aur jo bhi existing code hai poora replace karke ye paste karo:
 
-Refund = ₹400
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-Borrowing limit
+    <title>AV Room Equipment Rental</title>
 
-Ek borrower unlimited equipment nahi le sakta.
+    <link rel="stylesheet" href="/static/style.css">
+</head>
 
-Example:
+<body>
 
-Maximum active loans = 3
+    <header>
+        <h1>AV Room Equipment Rental</h1>
+        <p>Equipment booking and rental management system</p>
+    </header>
 
-Late fee
 
-Example:
+    <main>
 
-Due date: 10 Sept
-Returned: 13 Sept
-Late: 3 days
+        <!-- Equipment Section -->
+        <section>
+            <h2>Equipment Inventory</h2>
 
-Late fee = 3 × ₹20
-         = ₹60
-🔥 Twist — sabse important
+            <div id="equipment-list" class="equipment-grid">
+                <!-- Equipment cards will be loaded here -->
+            </div>
+        </section>
 
-Assessment ka special requirement hai:
 
-Active loan ko ek borrower se doosre borrower ko transfer karna hai.
+        <!-- Availability Section -->
+        <section>
+            <h2>Check Availability</h2>
 
-Example:
+            <div class="form-grid">
 
-Projector #2
+                <div>
+                    <label>Equipment</label>
+                    <select id="availability-equipment"></select>
+                </div>
 
-Before:
-Borrower = Rahul
-Due date = 20 Sept
-Status = Active
+                <div>
+                    <label>Borrow Date</label>
+                    <input type="date" id="availability-borrow-date">
+                </div>
 
-Transfer:
+                <div>
+                    <label>Due Date</label>
+                    <input type="date" id="availability-due-date">
+                </div>
 
-Rahul → Aman
+            </div>
 
-After:
+            <button onclick="checkAvailability()">
+                Check Availability
+            </button>
 
-Borrower = Aman
-Due date = 20 Sept
-Status = Active
-Important:
+            <div id="availability-result"></div>
+        </section>
 
-Due date change nahi hogi.
 
-❌ Wrong:
+        <!-- Borrower Section -->
+        <section>
+            <h2>Add Borrower</h2>
 
-Rahul → Aman
-Due date: 20 Sept → 25 Sept
+            <div class="form-grid">
 
-✅ Correct:
+                <div>
+                    <label>Name</label>
+                    <input type="text" id="borrower-name" placeholder="Enter name">
+                </div>
 
-Rahul → Aman
-Due date: 20 Sept → 20 Sept
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="borrower-email" placeholder="Enter email">
+                </div>
 
-Aur availability bhi change nahi hogi.
+            </div>
 
-Example:
+            <button onclick="addBorrower()">
+                Add Borrower
+            </button>
 
-Before transfer:
-Projectors = 3
-Borrowed = 2
-Available = 1
+            <div id="borrower-result"></div>
+        </section>
 
-Transfer ke baad:
 
-Projectors = 3
-Borrowed = 2
-Available = 1
+        <!-- Booking Section -->
+        <section>
+            <h2>Book Equipment</h2>
 
-Because equipment physically return nahi hua hai, sirf borrower change hua hai.
+            <div class="form-grid">
 
-API structure bhi roughly aisa ho sakta hai
-POST   /borrowers
-GET    /equipment
-GET    /equipment/{id}/availability
+                <div>
+                    <label>Borrower ID</label>
+                    <input type="number" id="booking-borrower">
+                </div>
 
-POST   /rentals
-POST   /rentals/{id}/return
+                <div>
+                    <label>Equipment</label>
+                    <select id="booking-equipment"></select>
+                </div>
 
-POST   /rentals/{id}/transfer
+                <div>
+                    <label>Quantity</label>
+                    <input type="number" id="booking-quantity" min="1">
+                </div>
 
-Aur transfer request:
+                <div>
+                    <label>Borrow Date</label>
+                    <input type="date" id="booking-borrow-date">
+                </div>
 
-{
-    "new_borrower_id": 5
+                <div>
+                    <label>Due Date</label>
+                    <input type="date" id="booking-due-date">
+                </div>
+
+                <div>
+                    <label>Deposit (₹)</label>
+                    <input type="number" id="booking-deposit" min="0">
+                </div>
+
+            </div>
+
+            <button onclick="createBooking()">
+                Book Equipment
+            </button>
+
+            <div id="booking-result"></div>
+        </section>
+
+
+        <!-- Rentals Section -->
+        <section>
+            <h2>All Rentals</h2>
+
+            <button onclick="loadRentals()">
+                Refresh Rentals
+            </button>
+
+            <div id="rentals-list">
+                <!-- Rental records will appear here -->
+            </div>
+        </section>
+
+    </main>
+
+
+    <footer>
+        <p>AV Room Equipment Rental System</p>
+    </footer>
+
+
+    <script src="/static/script.js"></script>
+
+</body>
+</html>
+
+Phir:
+
+Ctrl + S
+
+Abhi style.css ya script.js mat change karna.
+
+Bas index.html paste karke save karo aur bolo done.
+
+ker diya
+
+Perfect 👍
+
+Step 2 — static/style.css
+
+Ab style.css kholo. Agar blank hai to ye poora code paste karo:
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-Response:
-
-{
-    "rental_id": 12,
-    "old_borrower": 2,
-    "new_borrower": 5,
-    "due_date": "2026-09-20",
-    "status": "active"
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    color: #1f2937;
+    line-height: 1.6;
 }
 
-Tumne jo FastAPI code pehle bheja tha, usme RentalTransfer already bana hua tha:
+header {
+    background: #172554;
+    color: white;
+    padding: 30px 8%;
+    text-align: center;
+}
 
+header h1 {
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+header p {
+    opacity: 0.85;
+}
+
+main {
+    width: 90%;
+    max-width: 1200px;
+    margin: 30px auto;
+}
+
+section {
+    background: white;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #172554;
+}
+
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.equipment-card {
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    padding: 18px;
+    background: #fafcff;
+}
+
+.equipment-card h3 {
+    margin-bottom: 8px;
+    color: #1e3a8a;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 15px;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 11px 18px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+#availability-result,
+#borrower-result,
+#booking-result {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+#rentals-list {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.rental-card {
+    border: 1px solid #dbe3ef;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    background: #fafcff;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+}
+
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 25px;
+    }
+
+    main {
+        width: 95%;
+    }
+
+    section {
+        padding: 18px;
+    }
+}
+
+Phir:
+
+Ctrl + S
+
+Abhi script.js mat touch karna.
+
+style.css save ho jaye to bas done bolo.
+
+Haan 👍 screenshot se clear hai — backend perfectly chal raha hai, but / par abhi API ka JSON response aa raha hai:
+
+{"message":"AV Room Equipment Rental API is running"}
+
+Reason: main.py me / endpoint abhi JSON return kar raha hai. Hume ise frontend index.html serve karwana hai.
+
+Step 1 — app/main.py open karo
+
+Sabse upar import me ye add karo:
+
+from fastapi.responses import FileResponse
+
+So imports roughly:
+
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+Step 2 — Ye existing code:
+@app.get("/")
+def home():
+    return {
+        "message": "AV Room Equipment Rental API is running"
+    }
+
+isko replace karo:
+
+@app.get("/")
+def home():
+    return FileResponse("static/index.html")
+Step 3
+
+Save karo.
+
+Uvicorn --reload hai, isliye automatically reload ho jayega.
+
+Phir same URL refresh karo:
+
+https://fantastic-adventure-5q5g76xj7rjh457x-8000.app.github.dev/
+
+Ab JSON ki jagah AV Room Equipment Rental dashboard aana chahiye. 🚀
+
+Abhi aur code change mat karo. Pehle ye page browser me sahi open karwa lete hain, phir next step me Return + Transfer UI add karenge, kyunki Builder round ke "Twist" ko frontend se bhi demonstrate karna important hai.
+
+from fastapi import FastAPI, HTTPException 
+from fastapi.staticfiles import StaticFiles 
+ 
+from .database import create_tables 
+from .schemas import ( 
+    BorrowerCreate, 
+    RentalCreate, 
+    RentalReturn, 
+    RentalTransfer 
+) 
+ 
+from .crud import ( 
+    get_all_equipment, 
+    get_equipment_availability, 
+    create_borrower, 
+    create_rental, 
+    return_rental, 
+    get_all_rentals, 
+    transfer_rental 
+) 
+ 
+ 
+app = FastAPI( 
+    title="AV Room Equipment Rental System", 
+    description="Equipment booking and rental management system" 
+) 
+ 
+ 
+# Create database tables when application starts 
+create_tables() 
+ 
+ 
+# Serve frontend 
+app.mount("/static", StaticFiles(directory="static"), name="static") 
+ 
+ 
+@app.get("/") 
+def home(): 
+    return { 
+        "message": "AV Room Equipment Rental API is running" 
+    } 
+ 
+ 
+@app.get("/equipment") 
+def equipment_list(): 
+    return get_all_equipment() 
+ 
+ 
+@app.get("/equipment/{equipment_id}/availability") 
+def equipment_availability( 
+    equipment_id: int, 
+    borrow_date: str, 
+    due_date: str 
+): 
+    from datetime import date 
+ 
+    try: 
+        start = date.fromisoformat(borrow_date) 
+        end = date.fromisoformat(due_date) 
+    except ValueError: 
+        raise HTTPException( 
+            status_code=400, 
+            detail="Invalid date format. Use YYYY-MM-DD" 
+        ) 
+ 
+    if end <= start: 
+        raise HTTPException( 
+            status_code=400, 
+            detail="Due date must be after borrow date" 
+        ) 
+ 
+    result = get_equipment_availability( 
+        equipment_id, 
+        start, 
+        end 
+    ) 
+ 
+    if result is None: 
+        raise HTTPException( 
+            status_code=404, 
+            detail="Equipment not found" 
+        ) 
+ 
+    return result 
+ 
+ 
+@app.post("/borrowers") 
+def add_borrower(borrower: BorrowerCreate): 
+    result = create_borrower( 
+        borrower.name, 
+        borrower.email 
+    ) 
+ 
+    if result is None: 
+        raise HTTPException( 
+            status_code=400, 
+            detail="Borrower could not be created. Email may already exist." 
+        ) 
+ 
+    return result 
+ 
+ 
+@app.post("/rentals") 
+def add_rental(rental: RentalCreate): 
+    result = create_rental( 
+        rental.borrower_id, 
+        rental.equipment_id, 
+        rental.quantity, 
+        rental.borrow_date, 
+        rental.due_date, 
+        rental.deposit 
+    ) 
+ 
+    if "error" in result: 
+        raise HTTPException( 
+            status_code=400, 
+            detail=result["error"] 
+        ) 
+ 
+    return result 
+ 
+ 
+@app.get("/rentals") 
+def rental_list(): 
+    return get_all_rentals() 
+ 
+ 
+@app.post("/rentals/{rental_id}/return") 
+def return_equipment( 
+    rental_id: int, 
+    rental_return: RentalReturn 
+): 
+    result = return_rental( 
+        rental_id, 
+        rental_return.return_date 
+    ) 
+ 
+    if "error" in result: 
+        raise HTTPException( 
+            status_code=400, 
+            detail=result["error"] 
+        ) 
+ 
+    return result 
+ 
+ 
+@app.post("/rentals/{rental_id}/transfer") 
+def transfer_equipment( 
+    rental_id: int, 
+    transfer: RentalTransfer 
+): 
+    result = transfer_rental( 
+        rental_id, 
+        transfer.new_borrower_id 
+    ) 
+ 
+    if "error" in result: 
+        raise HTTPException( 
+            status_code=400, 
+            detail=result["error"] 
+        ) 
+ 
+    return result this is the code add it
+
+Haan, tumhare current main.py me sirf required change add karke poora code ye rahega. Isko complete replace kar do:
+
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+from .database import create_tables
 from .schemas import (
     BorrowerCreate,
     RentalCreate,
@@ -157,311 +586,195 @@ from .schemas import (
     RentalTransfer
 )
 
-Iska matlab hum tumhare existing project ko hi assessment ke complete requirements ke according finish kar sakte hain.
+from .crud import (
+    get_all_equipment,
+    get_equipment_availability,
+    create_borrower,
+    create_rental,
+    return_rental,
+    get_all_rentals,
+    transfer_rental
+)
 
-Agar tum chaho, main ab tumhare Auriga assessment ke liye complete project ko step-by-step finish karwa deta hoon — database → models → CRUD → FastAPI endpoints → transfer logic → README → reasoning → GitHub/Codespace submission.
-
-help me to buid it
-
-Bilkul. Hum ise step-by-step build karenge, aur goal rahega ki assessment ke liye working, clean FastAPI project ready ho — unnecessary features nahi.
-
-Tumhare previous code se lag raha hai ki tumne already FastAPI + database + schemas + crud structure start kar diya hai. Usi project ko continue karna best rahega.
-
-Architecture
-AV Room Lending System
-│
-├── app/
-│   ├── main.py
-│   ├── database.py
-│   ├── models.py
-│   ├── schemas.py
-│   └── crud.py
-│
-├── tests/
-│   └── test_rentals.py
-│
-├── requirements.txt
-├── README.md
-└── reasoning.md
-Database entities
-
-Hum initially 3 main tables rakhenge:
-
-Borrower
-   │
-   │ 1
-   │
-   │ many
-Rental
-   │
-   │ many
-   │
-Equipment
-
-Equipment
-
-id
-name
-category
-total_quantity
-available_quantity
-late_fee_per_day
-deposit_amount
-
-Example:
-
-1 | DSLR     | Camera    | 5 | 4 | ₹50 | ₹1000
-2 | Projector| Projector | 3 | 2 | ₹30 | ₹500
-
-Borrower
-
-id
-name
-email
-
-Rental
-
-id
-equipment_id
-borrower_id
-borrowed_at
-due_date
-returned_at
-status
-deposit_amount
-late_fee
-🔥 Transfer logic
-
-This is the part interviewer/assessor will likely check carefully.
-
-Suppose:
-
-Rental #10
-
-Equipment: Projector
-Borrower: Rahul
-Due date: 20 Sept
-Status: ACTIVE
-
-Transfer:
-
-Rahul → Aman
-
-We only change:
-
-borrower_id
-
-We do NOT:
-
-equipment availability
-due_date
-borrowed_at
-
-So:
-
-Before:
-borrower_id = Rahul
-due_date = 20 Sept
-available = 1
-
-After:
-borrower_id = Aman
-due_date = 20 Sept
-available = 1
-Step 1 — Let's inspect your current project
-
-Since you've already started the FastAPI project, don't create everything from scratch yet.
-
-Send me the current contents of these files:
-
-main.py
-database.py
-models.py
-schemas.py
-crud.py
-
-You can simply paste them here one by one.
-
-If your structure is:
-
-app/
-    main.py
-    database.py
-    schemas.py
-    crud.py
-
-and models.py doesn't exist, that's fine too.
-
-Start by sending database.py and schemas.py. I'll modify your existing code rather than making you rebuild the project.
-
-step by step to build it
-
-Bilkul. Hum zero se step-by-step build karenge, aur har step ke baad tum run karke verify karoge. Isse assessment ke time tumhe code bhi samajh aayega.
-
-Hum FastAPI + SQLite + SQLAlchemy + Pydantic use karenge.
-
-Overall roadmap
-STEP 1  → Project setup
-STEP 2  → Database setup
-STEP 3  → Database models
-STEP 4  → Pydantic schemas
-STEP 5  → Equipment APIs
-STEP 6  → Borrower APIs
-STEP 7  → Rental/Borrow API
-STEP 8  → Availability
-STEP 9  → Return + late fee + deposit
-STEP 10 → Borrowing limit
-STEP 11 → 🔥 Loan transfer
-STEP 12 → Validation + error handling
-STEP 13 → Testing
-STEP 14 → README + reasoning
-STEP 15 → GitHub submission
-STEP 1 — Create the project
-
-Create a folder:
-
-auriga-av-room
-
-Open it in VS Code.
-
-Inside it create:
-
-auriga-av-room/
-│
-├── app/
-│
-└── requirements.txt
-
-Inside app, create:
-
-app/
-├── __init__.py
-└── main.py
-
-So currently:
-
-auriga-av-room/
-│
-├── app/
-│   ├── __init__.py
-│   └── main.py
-│
-└── requirements.txt
-STEP 2 — Create virtual environment
-
-Open terminal in VS Code:
-
-python -m venv venv
-
-Activate it on Windows PowerShell:
-
-.\venv\Scripts\Activate.ps1
-
-If PowerShell gives an execution-policy error, use:
-
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-Then activate again:
-
-.\venv\Scripts\Activate.ps1
-
-You should see something like:
-
-(venv) PS C:\...\auriga-av-room>
-STEP 3 — Install packages
-
-Run:
-
-pip install fastapi uvicorn sqlalchemy
-
-Then save dependencies:
-
-pip freeze > requirements.txt
-STEP 4 — First FastAPI application
-
-Open:
-
-app/main.py
-
-Put this:
-
-from fastapi import FastAPI
 
 app = FastAPI(
-    title="AV Room Equipment Lending System",
-    description="Equipment lending and tracking system for college AV room"
+    title="AV Room Equipment Rental System",
+    description="Equipment booking and rental management system"
 )
+
+
+# Create database tables when application starts
+create_tables()
+
+
+# Serve frontend
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
 def home():
-    return {
-        "message": "AV Room Lending System is running"
-    }
-STEP 5 — Run the server
+    return FileResponse("static/index.html")
 
-From the project root:
 
-uvicorn app.main:app --reload
+@app.get("/equipment")
+def equipment_list():
+    return get_all_equipment()
 
-You should get:
 
-Uvicorn running on http://127.0.0.1:8000
+@app.get("/equipment/{equipment_id}/availability")
+def equipment_availability(
+    equipment_id: int,
+    borrow_date: str,
+    due_date: str
+):
+    from datetime import date
 
-Open:
+    try:
+        start = date.fromisoformat(borrow_date)
+        end = date.fromisoformat(due_date)
 
-http://127.0.0.1:8000
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid date format. Use YYYY-MM-DD"
+        )
 
-You should see:
+    if end <= start:
+        raise HTTPException(
+            status_code=400,
+            detail="Due date must be after borrow date"
+        )
 
-{
-    "message": "AV Room Lending System is running"
-}
-STEP 6 — Check Swagger
+    result = get_equipment_availability(
+        equipment_id,
+        start,
+        end
+    )
 
-This is important for the assessment.
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Equipment not found"
+        )
 
-Open:
+    return result
 
-http://127.0.0.1:8000/docs
 
-You should see:
+@app.post("/borrowers")
+def add_borrower(borrower: BorrowerCreate):
 
-AV Room Equipment Lending System
+    result = create_borrower(
+        borrower.name,
+        borrower.email
+    )
 
-and:
+    if result is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Borrower could not be created. Email may already exist."
+        )
 
-GET /
+    return result
 
-Click GET / → Try it out → Execute.
 
-You should get:
+@app.post("/rentals")
+def add_rental(rental: RentalCreate):
 
-{
-  "message": "AV Room Lending System is running"
-}
-🛑 Stop here
+    result = create_rental(
+        rental.borrower_id,
+        rental.equipment_id,
+        rental.quantity,
+        rental.borrow_date,
+        rental.due_date,
+        rental.deposit
+    )
 
-Don't build the database yet.
+    if "error" in result:
+        raise HTTPException(
+            status_code=400,
+            detail=result["error"]
+        )
 
-First make sure Step 1–6 works.
+    return result
 
-Your terminal should look approximately like:
 
-(venv) PS C:\...\auriga-av-room> uvicorn app.main:app --reload
+@app.get("/rentals")
+def rental_list():
+    return get_all_rentals()
 
-INFO:     Uvicorn running on http://127.0.0.1:8000
 
-And /docs should open successfully.
+@app.post("/rentals/{rental_id}/return")
+def return_equipment(
+    rental_id: int,
+    rental_return: RentalReturn
+):
 
-Once this is working, Step 7 will be the database:
+    result = return_rental(
+        rental_id,
+        rental_return.return_date
+    )
 
-SQLite
-   ↓
-SQLAlchemy
-   ↓
-Borrower
-Equipment
-Rental
+    if "error" in result:
+        raise HTTPException(
+            status_code=400,
+            detail=result["error"]
+        )
 
-Then we'll start implementing the actual assessment logic.
+    return result
+
+
+@app.post("/rentals/{rental_id}/transfer")
+def transfer_equipment(
+    rental_id: int,
+    transfer: RentalTransfer
+):
+
+    result = transfer_rental(
+        rental_id,
+        transfer.new_borrower_id
+    )
+
+    if "error" in result:
+        raise HTTPException(
+            status_code=400,
+            detail=result["error"]
+        )
+
+    return result
+Ab kya change hua?
+
+Bas ye import add hua:
+
+from fastapi.responses import FileResponse
+
+Aur / endpoint:
+
+@app.get("/")
+def home():
+    return FileResponse("static/index.html")
+
+Ab Save (Ctrl + S) karo aur browser me wahi URL refresh karo.
+
+Ab JSON ke badle tumhara AV Room Equipment Rental dashboard open hona chahiye. 🚀
+
+Agar dashboard aa gaya, 
+next hum Return + Transfer buttons UI me add karenge.
+
+tum ker do nah
+
+Haan 👍 maine updated main.py ready kar diya hai.
+
+Download updated main.py
+
+Isme / route ab directly static/index.html open karega.
+
+Codespace me bas ye karo:
+app/main.py open karo
+Existing code ko is downloaded file ke code se replace karo
+Ctrl + S
+Browser refresh karo
+
+Main tumhare actual GitHub Codespace filesystem ko directly edit nahi kar sakta, isliye file ready karke de raha hoon. 
+
+main.py
+Code
