@@ -45,6 +45,10 @@ equipment_rental/
 ├── README.md
 ├── REASONING.md
 └── AI_LOGS.md
+
+
+
+
 Setup
 1. Clone the repository
 git clone <YOUR_PUBLIC_REPOSITORY_URL>
