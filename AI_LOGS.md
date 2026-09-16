@@ -1,5 +1,4 @@
-Perfect! 🔥 Transfer test bhi completely pass ho gaya.
-
+mujhe sirf TWIST  KERA H USME DIKKAT AYI h GPT
 Current state:
 
 DSLR total units     = 3
